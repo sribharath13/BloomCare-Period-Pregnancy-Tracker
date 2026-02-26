@@ -163,25 +163,43 @@ async function startServer() {
 
   // --- Vite Middleware ---
   const distPath = path.resolve(__dirname, 'dist');
-  if (process.env.NODE_ENV !== 'production') {
+  const isProduction = process.env.NODE_ENV === 'production';
+
+  if (!isProduction) {
     console.log('Running in development mode with Vite middleware');
-    const vite = await createViteServer({
-      server: { middlewareMode: true },
-      appType: 'spa',
-    });
-    app.use(vite.middlewares);
+    try {
+      const vite = await createViteServer({
+        server: { middlewareMode: true },
+        appType: 'spa',
+      });
+      app.use(vite.middlewares);
+    } catch (e) {
+      console.error('Failed to start Vite server:', e);
+    }
   } else {
     console.log('Running in production mode, serving from:', distPath);
     app.use(express.static(distPath));
     app.get('*', (req, res) => {
-      res.sendFile(path.join(distPath, 'index.html'));
+      const indexPath = path.join(distPath, 'index.html');
+      res.sendFile(indexPath, (err) => {
+        if (err) {
+          console.error('Error sending index.html:', err);
+          res.status(500).send('Error loading application');
+        }
+      });
     });
   }
+
+  // Global Error Handler
+  app.use((err: any, req: any, res: any, next: any) => {
+    console.error('SERVER ERROR:', err);
+    res.status(500).json({ error: 'Internal Server Error', details: err.message });
+  });
 
   app.listen(PORT, '0.0.0.0', () => {
     console.log(`BloomCare Server started successfully!`);
     console.log(`Listening on http://0.0.0.0:${PORT}`);
-    console.log(`Environment: ${process.env.NODE_ENV || 'development'}`);
+    console.log(`Environment: ${process.env.NODE_ENV || 'not set (defaulting to dev)'}`);
   });
 }
 
