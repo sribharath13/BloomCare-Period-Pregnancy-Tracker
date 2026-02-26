@@ -15,6 +15,15 @@ const __dirname = path.dirname(__filename);
 const JWT_SECRET = process.env.JWT_SECRET || 'bloomcare-secret-key-123';
 
 async function startServer() {
+  // Force production mode if we are running the built app
+  if (process.env.NODE_ENV !== 'production' && !process.env.VITE_DEV) {
+    // Check if dist exists
+    const distExists = await import('fs/promises').then(fs => fs.access(path.resolve(process.cwd(), 'dist')).then(() => true).catch(() => false));
+    if (distExists) {
+      process.env.NODE_ENV = 'production';
+    }
+  }
+
   const app = express();
   const PORT = 3000;
 
@@ -41,6 +50,10 @@ async function startServer() {
   };
 
   // --- API Routes ---
+
+  app.get('/ping', (req, res) => {
+    res.send('pong');
+  });
 
   // Auth
   app.post('/api/auth/signup', async (req, res) => {
