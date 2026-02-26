@@ -1,0 +1,13 @@
+@import "tailwindcss";
+
+@theme {
+  --color-blush: #F8D7DA;
+  --color-peach: #FFE5D9;
+  --color-teal-muted: #A8DADC;
+  --color-bloom-pink: #FFB7B2;
+  --color-bloom-bg: #FFF9F9;
+}
+
+body {
+  @apply bg-bloom-bg text-gray-800 font-sans;
+}
