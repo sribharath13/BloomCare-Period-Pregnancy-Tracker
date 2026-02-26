@@ -18,6 +18,12 @@ async function startServer() {
   const app = express();
   const PORT = 3000;
 
+  // Request Logging
+  app.use((req, res, next) => {
+    console.log(`[${new Date().toISOString()}] ${req.method} ${req.url}`);
+    next();
+  });
+
   app.use(express.json());
 
   // --- Auth Middleware ---
@@ -153,10 +159,18 @@ async function startServer() {
   });
 
   app.get('/api/health', (req, res) => {
+    console.log('Health check requested');
     try {
       const userCount = db.prepare('SELECT COUNT(*) as count FROM users').get() as any;
-      res.json({ status: 'ok', database: 'connected', users: userCount.count });
+      res.json({ 
+        status: 'ok', 
+        database: 'connected', 
+        users: userCount.count,
+        time: new Date().toISOString(),
+        env: process.env.NODE_ENV
+      });
     } catch (e: any) {
+      console.error('Health check failed:', e);
       res.status(500).json({ status: 'error', message: e.message });
     }
   });

@@ -9,6 +9,13 @@ const dbPath = path.join(__dirname, '..', 'bloomcare.db');
 console.log('Initializing database at:', dbPath);
 const db = new Database(dbPath);
 
+try {
+  db.prepare('SELECT 1').get();
+  console.log('Database connection verified successfully');
+} catch (err) {
+  console.error('FAILED to connect to database:', err);
+}
+
 // Initialize schema
 db.exec(`
   CREATE TABLE IF NOT EXISTS users (
