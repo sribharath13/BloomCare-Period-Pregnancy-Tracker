@@ -44,28 +44,41 @@ async function startServer() {
     try {
       const hashedPassword = await bcrypt.hash(password, 10);
       const result = db.prepare('INSERT INTO users (email, password, consent_accepted) VALUES (?, ?, ?)').run(email, hashedPassword, 1);
-      const user = { id: result.lastInsertRowid, email };
-      const token = jwt.sign(user, JWT_SECRET);
+      
+      // Fetch the full user object to get defaults
+      const user: any = db.prepare('SELECT id, email, mode, language_code FROM users WHERE id = ?').get(result.lastInsertRowid);
+      
+      const token = jwt.sign({ id: user.id, email: user.email }, JWT_SECRET);
+      console.log('User signed up successfully:', email);
       res.json({ token, user });
     } catch (e: any) {
+      console.error('Signup error:', e);
       if (e.message.includes('UNIQUE')) {
         res.status(400).json({ error: 'Email already exists' });
       } else {
-        res.status(500).json({ error: 'Internal server error' });
+        res.status(500).json({ error: 'Internal server error: ' + e.message });
       }
     }
   });
 
   app.post('/api/auth/login', async (req, res) => {
     const { email, password } = req.body;
-    const user: any = db.prepare('SELECT * FROM users WHERE email = ?').get(email);
+    console.log('Login attempt for:', email);
+    try {
+      const user: any = db.prepare('SELECT * FROM users WHERE email = ?').get(email);
 
-    if (!user || !(await bcrypt.compare(password, user.password))) {
-      return res.status(401).json({ error: 'Invalid credentials' });
+      if (!user || !(await bcrypt.compare(password, user.password))) {
+        console.log('Invalid credentials for:', email);
+        return res.status(401).json({ error: 'Invalid credentials' });
+      }
+
+      const token = jwt.sign({ id: user.id, email: user.email }, JWT_SECRET);
+      console.log('User logged in successfully:', email);
+      res.json({ token, user: { id: user.id, email: user.email, mode: user.mode, language_code: user.language_code } });
+    } catch (e: any) {
+      console.error('Login error:', e);
+      res.status(500).json({ error: 'Internal server error: ' + e.message });
     }
-
-    const token = jwt.sign({ id: user.id, email: user.email }, JWT_SECRET);
-    res.json({ token, user: { id: user.id, email: user.email, mode: user.mode, language_code: user.language_code } });
   });
 
   // User Profile
@@ -137,6 +150,15 @@ async function startServer() {
   app.get('/api/languages', (req, res) => {
     const languages = db.prepare('SELECT * FROM languages').all();
     res.json(languages);
+  });
+
+  app.get('/api/health', (req, res) => {
+    try {
+      const userCount = db.prepare('SELECT COUNT(*) as count FROM users').get() as any;
+      res.json({ status: 'ok', database: 'connected', users: userCount.count });
+    } catch (e: any) {
+      res.status(500).json({ status: 'error', message: e.message });
+    }
   });
 
   // --- Vite Middleware ---

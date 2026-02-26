@@ -15,17 +15,22 @@ export default function Login() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
-    const res = await fetch('/api/auth/login', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email, password }),
-    });
-    const data = await res.json();
-    if (res.ok) {
-      login(data.token, data.user);
-      navigate('/');
-    } else {
-      setError(data.error);
+    try {
+      const res = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        login(data.token, data.user);
+        navigate('/');
+      } else {
+        setError(data.error || 'Login failed. Please check your credentials.');
+      }
+    } catch (err: any) {
+      console.error('Login fetch error:', err);
+      setError('Network error. Please check your connection.');
     }
   };
 

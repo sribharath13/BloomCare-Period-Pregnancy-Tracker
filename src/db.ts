@@ -5,7 +5,9 @@ import { fileURLToPath } from 'url';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-const db = new Database('bloomcare.db');
+const dbPath = path.join(__dirname, '..', 'bloomcare.db');
+console.log('Initializing database at:', dbPath);
+const db = new Database(dbPath);
 
 // Initialize schema
 db.exec(`

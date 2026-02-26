@@ -20,17 +20,22 @@ export default function Signup() {
       return;
     }
     setError('');
-    const res = await fetch('/api/auth/signup', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email, password, consentAccepted: true }),
-    });
-    const data = await res.json();
-    if (res.ok) {
-      login(data.token, data.user);
-      navigate('/onboarding');
-    } else {
-      setError(data.error);
+    try {
+      const res = await fetch('/api/auth/signup', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password, consentAccepted: true }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        login(data.token, data.user);
+        navigate('/onboarding');
+      } else {
+        setError(data.error || 'Signup failed. Please try again.');
+      }
+    } catch (err: any) {
+      console.error('Signup fetch error:', err);
+      setError('Network error. Please check your connection.');
     }
   };
 
