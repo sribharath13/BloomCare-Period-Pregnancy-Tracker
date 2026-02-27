@@ -1,23 +1,31 @@
 import React from 'react';
 import { Outlet, NavLink } from 'react-router-dom';
-import { Home, Calendar, PlusCircle, Settings, Bell } from 'lucide-react';
-import { useLanguage } from '../App';
+import { Home, Calendar, PlusCircle, Settings, Bell, Crown } from 'lucide-react';
+import { useLanguage, useAuth } from '../App';
 import { motion } from 'motion/react';
 
 export default function Layout() {
   const { t } = useLanguage();
+  const { user } = useAuth();
 
   return (
     <div className="min-h-screen bg-bloom-bg pb-24">
       {/* Header */}
       <header className="bg-white/80 backdrop-blur-md sticky top-0 z-50 px-6 py-4 flex justify-between items-center border-b border-blush/30">
-        <h1 className="text-xl font-bold text-gray-800 tracking-tight flex items-center gap-2">
+        <NavLink to="/" className="text-xl font-bold text-gray-800 tracking-tight flex items-center gap-2">
           <span className="w-8 h-8 bg-bloom-pink rounded-full flex items-center justify-center text-white text-xs">B</span>
           BloomCare
-        </h1>
-        <button className="p-2 text-gray-400 hover:text-bloom-pink transition-colors">
-          <Bell size={24} />
-        </button>
+        </NavLink>
+        <div className="flex items-center gap-4">
+          {user?.subscription_tier === 'free' && (
+            <NavLink to="/premium" className="text-bloom-pink hover:scale-110 transition-transform">
+              <Crown size={22} />
+            </NavLink>
+          )}
+          <button className="p-2 text-gray-400 hover:text-bloom-pink transition-colors">
+            <Bell size={24} />
+          </button>
+        </div>
       </header>
 
       {/* Main Content */}

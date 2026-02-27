@@ -93,7 +93,13 @@ async function startServer() {
 
       const token = jwt.sign({ id: user.id, email: user.email }, JWT_SECRET);
       console.log('User logged in successfully:', email);
-      res.json({ token, user: { id: user.id, email: user.email, mode: user.mode, language_code: user.language_code } });
+      res.json({ token, user: { 
+        id: user.id, 
+        email: user.email, 
+        mode: user.mode, 
+        language_code: user.language_code,
+        subscription_tier: user.subscription_tier
+      } });
     } catch (e: any) {
       console.error('Login error:', e);
       res.status(500).json({ error: 'Internal server error: ' + e.message });
@@ -169,6 +175,30 @@ async function startServer() {
   app.get('/api/languages', (req, res) => {
     const languages = db.prepare('SELECT * FROM languages').all();
     res.json(languages);
+  });
+
+  // Subscription
+  app.post('/api/subscription/upgrade', authenticateToken, (req: any, res) => {
+    const { tier } = req.body;
+    try {
+      db.prepare('UPDATE users SET subscription_tier = ? WHERE id = ?').run(tier, req.user.id);
+      res.json({ success: true, tier });
+    } catch (e: any) {
+      res.status(500).json({ error: e.message });
+    }
+  });
+
+  // AI Insights (Premium Feature)
+  app.post('/api/ai/insights', authenticateToken, async (req: any, res) => {
+    const user: any = db.prepare('SELECT * FROM users WHERE id = ?').get(req.user.id);
+    if (user.subscription_tier !== 'premium') {
+      return res.status(403).json({ error: 'Premium subscription required' });
+    }
+
+    // Mock AI response for now, or use Gemini if configured
+    res.json({ 
+      insight: "Based on your recent logs, your body is showing signs of increased progesterone. We recommend focusing on magnesium-rich foods this week to support your energy levels."
+    });
   });
 
   app.get('/api/health', (req, res) => {

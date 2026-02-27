@@ -2,8 +2,9 @@ import React, { useEffect, useState } from 'react';
 import { useAuth, useLanguage } from '../App';
 import { motion } from 'motion/react';
 import { format, addDays, differenceInDays, parseISO, startOfDay } from 'date-fns';
-import { Calendar, Droplets, Baby, Info, ChevronRight, PlusCircle } from 'lucide-react';
+import { Calendar, Droplets, Baby, Info, ChevronRight, PlusCircle, Crown, Sparkles, TrendingUp } from 'lucide-react';
 import { PregnancyWeek } from '../types';
+import { GoogleGenAI } from "@google/genai";
 
 import { useNavigate } from 'react-router-dom';
 
@@ -12,6 +13,20 @@ export default function Dashboard() {
   const { t, language } = useLanguage();
   const navigate = useNavigate();
   const [weekData, setWeekData] = useState<PregnancyWeek | null>(null);
+  const [aiInsight, setAiInsight] = useState<string | null>(null);
+  const [loadingInsight, setLoadingInsight] = useState(false);
+
+  useEffect(() => {
+    if (user?.subscription_tier === 'premium') {
+      setLoadingInsight(true);
+      fetch('/api/ai/insights', {
+        headers: { 'Authorization': `Bearer ${token}` }
+      })
+        .then(res => res.json())
+        .then(data => setAiInsight(data.insight))
+        .finally(() => setLoadingInsight(false));
+    }
+  }, [user?.subscription_tier, token]);
 
   useEffect(() => {
     if (user?.mode === 'Pregnancy' && user.lmp_date) {
@@ -30,11 +45,26 @@ export default function Dashboard() {
   if (!user) return null;
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-8 pb-12">
       {/* Welcome Header */}
-      <section>
-        <h2 className="text-2xl font-bold text-gray-800">Hello, Bloom!</h2>
-        <p className="text-gray-500">Today is {format(new Date(), 'EEEE, MMMM do')}</p>
+      <section className="flex items-center justify-between">
+        <div>
+          <h2 className="text-3xl font-black text-gray-900 tracking-tight">Hello, Bloom!</h2>
+          <p className="text-gray-500 font-medium">Today is {format(new Date(), 'EEEE, MMMM do')}</p>
+        </div>
+        {user.subscription_tier === 'premium' ? (
+          <div className="flex items-center gap-2 px-3 py-1 bg-bloom-pink/10 text-bloom-pink rounded-full text-xs font-black uppercase tracking-widest">
+            <Crown size={14} />
+            Premium
+          </div>
+        ) : (
+          <button 
+            onClick={() => navigate('/premium')}
+            className="flex items-center gap-2 px-3 py-1 bg-gray-100 text-gray-500 rounded-full text-xs font-black uppercase tracking-widest hover:bg-bloom-pink hover:text-white transition-all"
+          >
+            Upgrade
+          </button>
+        )}
       </section>
 
       {user.mode === 'Cycle' ? (
@@ -43,24 +73,57 @@ export default function Dashboard() {
         <PregnancyDashboard user={user} weekData={weekData} t={t} />
       )}
 
-      {/* Quick Tips / Insights */}
-      <section className="bg-teal-muted/20 rounded-3xl p-6 border border-teal-muted/30">
-        <div className="flex items-center gap-3 mb-3">
-          <Info className="text-teal-muted" />
-          <h3 className="font-bold text-gray-800">Daily Insight</h3>
-        </div>
-        <p className="text-sm text-gray-600 leading-relaxed">
-          Staying hydrated and getting enough sleep can significantly improve your mood and energy levels today.
-        </p>
-      </section>
+      {/* Premium AI Insight */}
+      {user.subscription_tier === 'premium' && (
+        <motion.section 
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="relative overflow-hidden bg-gradient-to-br from-indigo-500 to-purple-600 rounded-[2rem] p-8 text-white shadow-2xl shadow-indigo-500/20"
+        >
+          <div className="absolute top-0 right-0 p-6 opacity-10">
+            <Sparkles size={120} />
+          </div>
+          <div className="relative z-10">
+            <div className="flex items-center gap-2 mb-4">
+              <Sparkles size={20} className="text-indigo-200" />
+              <h3 className="text-sm font-black uppercase tracking-[0.2em] text-indigo-100">AI Health Insight</h3>
+            </div>
+            {loadingInsight ? (
+              <div className="h-20 flex items-center justify-center">
+                <div className="w-6 h-6 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+              </div>
+            ) : (
+              <p className="text-lg font-medium leading-relaxed text-indigo-50">
+                {aiInsight || "Analyzing your data for personalized insights..."}
+              </p>
+            )}
+          </div>
+        </motion.section>
+      )}
+
+      {/* Free Tier Insight */}
+      {user.subscription_tier === 'free' && (
+        <section className="bg-white rounded-[2rem] p-8 border border-gray-100 shadow-sm">
+          <div className="flex items-center gap-3 mb-4">
+            <div className="w-10 h-10 bg-teal-50 text-teal-500 rounded-xl flex items-center justify-center">
+              <TrendingUp size={20} />
+            </div>
+            <h3 className="font-bold text-gray-900">Daily Tip</h3>
+          </div>
+          <p className="text-gray-600 leading-relaxed">
+            Staying hydrated and getting enough sleep can significantly improve your mood and energy levels today. 
+            <button onClick={() => navigate('/premium')} className="text-bloom-pink font-bold ml-1 hover:underline">Get premium insights →</button>
+          </p>
+        </section>
+      )}
 
       {/* Quick Action */}
       <button 
         onClick={() => navigate('/log')}
-        className="w-full bg-bloom-pink text-white font-bold py-5 rounded-3xl shadow-xl shadow-bloom-pink/30 flex items-center justify-center gap-3 active:scale-95 transition-all"
+        className="w-full bg-bloom-pink text-white font-bold py-6 rounded-[2rem] shadow-2xl shadow-bloom-pink/30 flex items-center justify-center gap-3 active:scale-95 transition-all group"
       >
-        <PlusCircle size={24} />
-        {t('log_today')}
+        <PlusCircle size={24} className="group-hover:rotate-90 transition-transform" />
+        <span className="text-lg tracking-tight">{t('log_today')}</span>
       </button>
     </div>
   );
@@ -83,24 +146,32 @@ function CycleDashboard({ user, t }: { user: any; t: any }) {
         <motion.div 
           initial={{ scale: 0.9, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
-          className="w-64 h-64 rounded-full border-8 border-blush flex flex-col items-center justify-center bg-white shadow-2xl shadow-blush/50 relative"
+          className="w-64 h-64 rounded-full border-[12px] border-blush flex flex-col items-center justify-center bg-white shadow-2xl shadow-blush/50 relative"
         >
-          <div className="absolute inset-0 rounded-full border-8 border-bloom-pink border-t-transparent animate-spin-slow opacity-20" />
-          <Droplets className="text-bloom-pink mb-2" size={32} />
-          <span className="text-4xl font-black text-gray-800">{daysUntil}</span>
-          <span className="text-sm font-medium text-gray-500 uppercase tracking-widest">Days to Period</span>
+          <div className="absolute inset-0 rounded-full border-[12px] border-bloom-pink border-t-transparent animate-spin-slow opacity-20" />
+          <div className="absolute -top-2 -right-2 w-12 h-12 bg-white rounded-full shadow-lg flex items-center justify-center border border-blush">
+            <Droplets className="text-bloom-pink" size={20} />
+          </div>
+          <span className="text-6xl font-black text-gray-900 tracking-tighter">{daysUntil}</span>
+          <span className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] mt-2">Days to Period</span>
         </motion.div>
       </div>
 
       {/* Stats Grid */}
       <div className="grid grid-cols-2 gap-4">
-        <div className="bg-white p-5 rounded-3xl border border-blush shadow-sm">
-          <div className="text-xs font-bold text-gray-400 uppercase mb-1">{t('ovulation')}</div>
-          <div className="text-lg font-bold text-gray-800">{format(ovulation, 'MMM do')}</div>
+        <div className="bg-white p-6 rounded-[2rem] border border-gray-100 shadow-sm group hover:border-bloom-pink/30 transition-colors">
+          <div className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2 flex items-center gap-2">
+            <div className="w-1.5 h-1.5 rounded-full bg-bloom-pink" />
+            {t('ovulation')}
+          </div>
+          <div className="text-xl font-bold text-gray-900">{format(ovulation, 'MMM do')}</div>
         </div>
-        <div className="bg-white p-5 rounded-3xl border border-blush shadow-sm">
-          <div className="text-xs font-bold text-gray-400 uppercase mb-1">{t('fertile_window')}</div>
-          <div className="text-lg font-bold text-gray-800">{format(fertileStart, 'MMM d')} - {format(fertileEnd, 'd')}</div>
+        <div className="bg-white p-6 rounded-[2rem] border border-gray-100 shadow-sm group hover:border-bloom-pink/30 transition-colors">
+          <div className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2 flex items-center gap-2">
+            <div className="w-1.5 h-1.5 rounded-full bg-teal-400" />
+            {t('fertile_window')}
+          </div>
+          <div className="text-xl font-bold text-gray-900">{format(fertileStart, 'MMM d')} - {format(fertileEnd, 'd')}</div>
         </div>
       </div>
     </div>

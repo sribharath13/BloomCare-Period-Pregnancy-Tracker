@@ -1,11 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth, useLanguage } from '../App';
 import { motion } from 'motion/react';
-import { LogOut, Globe, Activity, Calendar, Save, ChevronRight } from 'lucide-react';
+import { LogOut, Globe, Activity, Calendar, Save, ChevronRight, Crown } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 
 export default function Settings() {
   const { user, token, logout, updateUser } = useAuth();
   const { t, language: currentLang, setLanguage } = useLanguage();
+  const navigate = useNavigate();
   
   const [mode, setMode] = useState(user?.mode || 'Cycle');
   const [lang, setLang] = useState(user?.language_code || 'en');
@@ -49,6 +51,32 @@ export default function Settings() {
       <h2 className="text-2xl font-bold text-gray-800">{t('settings')}</h2>
 
       <div className="space-y-6">
+        {/* Subscription */}
+        <section className="bg-gradient-to-br from-white to-bloom-pink/5 p-6 rounded-3xl border border-blush shadow-sm space-y-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <Crown className="text-bloom-pink" size={20} />
+              <h3 className="font-bold text-gray-800">Subscription</h3>
+            </div>
+            <span className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest ${user?.subscription_tier === 'premium' ? 'bg-bloom-pink text-white' : 'bg-gray-100 text-gray-400'}`}>
+              {user?.subscription_tier || 'Free'}
+            </span>
+          </div>
+          <div className="flex items-center justify-between p-4 bg-white/50 rounded-2xl border border-white">
+            <div className="text-sm font-medium text-gray-600">
+              {user?.subscription_tier === 'premium' ? 'You have full access to all features.' : 'Unlock AI insights and advanced tracking.'}
+            </div>
+            {user?.subscription_tier === 'free' && (
+              <button 
+                onClick={() => navigate('/premium')}
+                className="text-bloom-pink font-bold text-sm hover:underline flex items-center gap-1"
+              >
+                Upgrade <ChevronRight size={16} />
+              </button>
+            )}
+          </div>
+        </section>
+
         {/* Language */}
         <section className="bg-white p-6 rounded-3xl border border-blush shadow-sm space-y-4">
           <div className="flex items-center gap-3 mb-2">

@@ -9,6 +9,7 @@ import HealthLogPage from './pages/HealthLog';
 import CalendarPage from './pages/Calendar';
 import RemindersPage from './pages/Reminders';
 import Settings from './pages/Settings';
+import Subscription from './pages/Subscription';
 import Layout from './components/Layout';
 
 // --- Contexts ---
@@ -144,6 +145,7 @@ export default function App() {
               <Route path="calendar" element={<CalendarPage />} />
               <Route path="reminders" element={<RemindersPage />} />
               <Route path="settings" element={<Settings />} />
+              <Route path="premium" element={<Subscription />} />
             </Route>
           </Routes>
         </Router>

@@ -28,6 +28,8 @@ db.exec(`
     cycle_length_days INTEGER DEFAULT 28,
     due_date TEXT,
     consent_accepted INTEGER DEFAULT 0,
+    subscription_tier TEXT DEFAULT 'free',
+    subscription_status TEXT DEFAULT 'active',
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP
   );
 

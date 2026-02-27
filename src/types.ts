@@ -8,6 +8,7 @@ export interface User {
   lmp_date?: string;
   cycle_length_days?: number;
   due_date?: string;
+  subscription_tier: 'free' | 'premium';
 }
 
 export interface HealthLog {
